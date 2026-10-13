@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NemotronGuard — Autonomous Self-Healing Sandbox</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-6 font-sans">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <header class="flex justify-between items-center border-b border-slate-800 pb-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-emerald-400">NemotronGuard</h1>
+        <p class="text-slate-400 text-sm">Autonomous Incident Remediation & Sandbox Verification</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="h-3 w-3 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs font-mono text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded border border-emerald-800">
+          NVIDIA NIM Nemotron Online
+        </span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Broken Source Code & Assertions</label>
+          <textarea id="code" rows="7" class="w-full bg-slate-900 border border-slate-800 rounded p-3 font-mono text-xs focus:outline-none focus:border-emerald-500 text-sky-300">def calculate_discount(price, discount):
+    # Bug: Division by zero when discount rate is empty or inverted
+    return price / (1 - discount)
+
+assert calculate_discount(100, 0.20) == 80.0</textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-1">CI Failure / Stack Trace</label>
+          <textarea id="log" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded p-3 font-mono text-xs focus:outline-none focus:border-emerald-500 text-rose-300">AssertionError: assert 125.0 == 80.0</textarea>
+        </div>
+
+        <button id="runBtn" onclick="runHeal()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded shadow transition">
+          Execute Autonomous Repair
+        </button>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 flex flex-col justify-between">
+        <div>
+          <h2 class="text-lg font-bold border-b border-slate-800 pb-2 mb-4 text-slate-200">Autonomous Agent Verification Console</h2>
+          <div id="output" class="space-y-4">
+            <p class="text-sm text-slate-500 italic">Click "Execute Autonomous Repair" to trigger Nemotron triage and execution.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function runHeal() {
+      const btn = document.getElementById("runBtn");
+      const out = document.getElementById("output");
+      btn.disabled = true;
+      btn.innerText = "Routing through NVIDIA Nemotron...";
+      out.innerHTML = `<div class="text-emerald-400 font-mono text-sm animate-pulse">Running Nemotron 3.5 Lightning triage & Nemotron Ultra reasoning...</div>`;
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/heal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            broken_code: document.getElementById("code").value,
+            error_log: document.getElementById("log").value
+          })
+        });
+
+        const data = await res.json();
+        if (data.status !== "success") throw new Error(data.detail || "Execution failed");
+
+        out.innerHTML = `
+          <div class="p-3 bg-slate-950 rounded border border-slate-800">
+            <p class="text-xs uppercase tracking-wider text-emerald-400 font-bold">1. Root-Cause Triage (Nemotron 3.5 Lightning)</p>
+            <p class="text-xs text-slate-300 mt-1 font-mono">${data.triage_summary}</p>
+          </div>
+          <div>
+            <p class="text-xs uppercase tracking-wider text-sky-400 font-bold">2. Verified Code Patch (Nemotron Ultra)</p>
+            <pre class="bg-slate-950 p-3 rounded mt-1 overflow-x-auto text-xs font-mono text-sky-300 border border-slate-800">${data.fixed_code}</pre>
+          </div>
+          <div class="p-3 bg-slate-950 rounded border border-slate-800">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs uppercase font-bold text-slate-400">3. Sandbox Test Result</span>
+              <span class="px-2 py-0.5 rounded text-xs font-bold ${data.sandbox_status === 'PASSED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'}">
+                ${data.sandbox_status}
+              </span>
+            </div>
+            <p class="text-xs font-mono text-slate-400">${data.sandbox_output}</p>
+          </div>
+        `;
+      } catch (err) {
+        out.innerHTML = `<div class="text-rose-400 font-mono text-xs p-3 bg-rose-950/40 rounded border border-rose-900">Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Execute Autonomous Repair";
+      }
+    }
+  </script>
+</body>
+</html>
